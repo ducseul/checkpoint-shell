@@ -1,6 +1,9 @@
 # Checkpoint Management RickRoll
 
-Quick start: curl -o rroll.sh -L 'https://raw.githubusercontent.com/ducseul/checkpoint-shell/main/rroll.sh' && chmod +x rroll.sh && ./rroll.sh
+Quick start: 
+```sh
+curl -o rroll.sh -L 'https://raw.githubusercontent.com/ducseul/checkpoint-shell/main/rroll.sh' && chmod +x rroll.sh && ./rroll.sh
+```
 You will have rrol.sh in the current directory. You can use it in the future without the need to download again
 ## Summary
 
