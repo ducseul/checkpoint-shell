@@ -1,24 +1,25 @@
 #!/bin/bash
 
 # Default checkpoint and predefined folder paths
-checkpoint_folder=""
+checkpoint_storage_folder=""
 predefined_folder=""
 
 # Function to prompt user for folder paths if they are not set
 set_folders() {
-    if [ -z "$checkpoint_folder" ] || [ -z "$predefined_folder" ]; then
+    if [ -z "$checkpoint_storage_folder" ] || [ -z "$predefined_folder" ]; then
         echo "It's look like the first time you ran script."
 		echo "Please set following parameter!"
-        read -rp "Enter the path to the checkpoint folder: " checkpoint_folder_input
-        read -rp "Enter the path to the predefined folder: " predefined_folder_input
-        checkpoint_folder="$checkpoint_folder_input"
+		echo "The folder path should be absolute path"
+        read -rp "Enter the path to storage checkpoint folder: " checkpoint_folder_input
+        read -rp "Enter the path to the target folder: " predefined_folder_input
+        checkpoint_storage_folder="$checkpoint_folder_input"
         predefined_folder="$predefined_folder_input"
-        echo "Checkpoint folder set to: $checkpoint_folder"
-        echo "Predefined folder set to: $predefined_folder"
+        echo "Checkpoint's storage folder set to: $checkpoint_storage_folder"
+        echo "Target folder set to: $predefined_folder"
 		echo Script is ready to use, please start script again
 		echo
         # Update the script itself with new folder paths
-        sed -i "s|^checkpoint_folder=.*|checkpoint_folder=\"$checkpoint_folder\"|g" "$0"
+        sed -i "s|^checkpoint_storage_folder=.*|checkpoint_storage_folder=\"$checkpoint_storage_folder\"|g" "$0"
         sed -i "s|^predefined_folder=.*|predefined_folder=\"$predefined_folder\"|g" "$0"
         exit
     fi
@@ -26,7 +27,7 @@ set_folders() {
 
 # Precheck function to verify if necessary commands and folders exist
 precheck() {
-	echo "QXV0aG9yOiBkdWNzZXVsIFZlcnNpb246IDIuMS40Cg==" | base64 -d
+	echo "QXV0aG9yOiBkdWNzZXVsICAgVmVyc2lvbjogMy4xLjUNCkNoZWNrIGZvciB1cGRhdGU6IGdpdGh1Yi5jb20vZHVjc2V1bC9jaGVja3BvaW50LXNoZWxsDQo=" | base64 -d
     if ! command -v zip &>/dev/null; then
         echo "Warning: 'zip' command not found. Using 'tar' instead."
         use_tar=true
@@ -34,8 +35,8 @@ precheck() {
         use_tar=false
     fi
 
-    if [ ! -d "$checkpoint_folder" ]; then
-        mkdir -p "$checkpoint_folder"
+    if [ ! -d "$checkpoint_storage_folder" ]; then
+        mkdir -p "$checkpoint_storage_folder"
         echo "Create checkpoint folder done!"
     fi
 }
@@ -44,9 +45,9 @@ create_checkpoint() {
     datetime=$(date '+%Y-%m-%d_%H-%M-%S')
     echo "Creating checkpoint..."
     if [ "$use_tar" = true ]; then
-        tar -czf "$checkpoint_folder/backup_$datetime.tar.gz" -C "$predefined_folder" .
+        tar -czf "$checkpoint_storage_folder/backup_$datetime.tar.gz" -C "$predefined_folder" .
     else
-        zip -rq "$checkpoint_folder/backup_$datetime.zip" "$predefined_folder"
+        zip -rq "$checkpoint_storage_folder/backup_$datetime.zip" "$predefined_folder"
     fi
     echo "Checkpoint created: backup_$datetime"
 }
@@ -54,7 +55,7 @@ create_checkpoint() {
 rollback_checkpoint() {
     echo "Available Checkpoints:"
     echo "0) Exit"
-    cd "$checkpoint_folder" || exit
+    cd "$checkpoint_storage_folder" || exit
     # zip might not be available yet, check for not showing unecessary messages
     if ls -1 *.zip &>/dev/null; then
         zip_checkpoints=($(ls -1t *.zip))
@@ -112,7 +113,7 @@ rollback_checkpoint() {
 
 remove_backup_files() {
     echo "Remove backup files:"
-    cd "$checkpoint_folder" || exit
+    cd "$checkpoint_storage_folder" || exit
     echo "Checkin directory: $(pwd)"
     
     # Debug: List all files in the current directory
@@ -180,18 +181,74 @@ remove_backup_files() {
     esac
 }
 
+add_cron_job() {
+    local current_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    local script_name=$(basename "$0")
+
+    # Command to be executed by the cron job
+    local COMMAND="$current_dir/$script_name backup_now >> $current_dir/$backup-cron.log"
+    # DEBUG command echo $COMMAND
+
+    # Function to prompt and add cron job
+    prompt_and_add_cron_job() {
+        local choice
+        echo "Select cron schedule option:"
+        echo "1. Daily"
+        echo "2. Weekly"
+        echo "3. Custom"
+        echo "4. Exit"
+
+        read -p "Enter your choice: " choice
+
+        case $choice in
+            1)
+                schedule="0 0 * * *"
+                ;;
+            2)
+                schedule="0 0 * * 0"
+                ;;
+            3)
+                read -p "Enter custom cron schedule: " custom_schedule
+                schedule="$custom_schedule"
+                ;;
+            4)
+                echo "Exiting..."
+                exit 0
+                ;;
+            *)
+                echo "Invalid option."
+                exit 1
+                ;;
+        esac
+
+        # Check if the cron job already exists
+        if ! crontab -l | grep -q "$COMMAND"; then
+            # Add the cron job
+            (crontab -l 2>/dev/null; echo "$schedule $COMMAND") | crontab -
+            echo "Cron job added successfully."
+        else
+            echo "Cron job already exists."
+        fi
+    }
+
+    # Call the function to prompt and add cron job
+    prompt_and_add_cron_job
+}
+
 
 menu() {
     echo "1. Create a backup checkpoint"
     echo "2. Rollback from a checkpoint"
     echo "3. Remove backup files"
-    echo "4. Exit"
+	echo "4. Add auto create checkpoint to crontab"
+    echo "5. Exit"
     read -rp "Enter your choice: " choice
     case $choice in
         1) create_checkpoint ;;
         2) rollback_checkpoint ;;
         3) remove_backup_files ;;
-        4) exit ;;
+		4) add_cron_job ;;
+        5) exit ;;
         *) echo "Invalid option. Please try again." ;;
     esac
 }
@@ -202,7 +259,11 @@ set_folders
 precheck
 
 # Main menu loop
-while true; do
-    echo
-    menu
-done
+if [[ $1 == "backup_now" ]]; then
+    create_checkpoint
+else
+    while true; do
+        echo
+        menu
+    done
+fi
