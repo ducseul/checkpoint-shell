@@ -2,9 +2,9 @@
 
 Quick start: 
 ```sh
-curl -o rroll.sh -L 'https://raw.githubusercontent.com/ducseul/checkpoint-shell/main/rroll.sh' && chmod +x rroll.sh && ./rroll.sh
+curl -o checkpoint-master.sh -L 'https://raw.githubusercontent.com/ducseul/checkpoint-shell/main/checkpoint-master.sh' && chmod +x checkpoint-master.sh && ./checkpoint-master.sh
 ```
-You will have rrol.sh in the current directory. You can use it in the future without the need to download again
+You will have `checkpoint-master.sh` in the current directory. You can use it in the future without the need to download again
 ## Summary
 
 This simple but useful Linux shell script provides functionality for creating checkpoints, managing backup checkpoints, and rolling back to previous states. It is designed to help users maintain backups of important data and easily restore them as needed.
@@ -21,10 +21,19 @@ This simple but useful Linux shell script provides functionality for creating ch
 
 ## How to Use
 
-1. **Setup**: Upon first run, the script prompts you to set up the checkpoint and predefined folders.
-2. **Create a Backup Checkpoint**: Choose the option to create a backup checkpoint. The script will create a compressed backup of the predefined folder with a timestamp.
+**Setup**: Upon first run, the script prompts you to set up the checkpoint storage and predefined folders need to be backup.
+**Quick action script**
+Script allow quick create checkpoint by single command
+```shell
+./checkpoint-master.sh backup_now
+```
+**Using Script Checkpoint Wizard**
+When starts script without any parameter, then you will be promp to following option.
+1. **Create a backup checkpoint** Choose the option to create a backup checkpoint. The script will create a compressed backup of the predefined folder with a timestamp.
+2. **Rollback**: Select the rollback option to restore your predefined folder to a selected backup checkpoint.
 3. **Manage Backup Checkpoints**: Choose from various options to manage backup checkpoints, including removing specific files, removing files older than a specified number of days, or removing all backup files.
-4. **Rollback**: Select the rollback option to restore your predefined folder to a selected backup checkpoint.
+4. **Add auto create checkpoint to crontab**: Add crontab job for create backup checkpoint automatic. Provide quick select cron expression for daily, weekly or custome input expression.
+
 
 ## Usage
 
