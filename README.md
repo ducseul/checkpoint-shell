@@ -23,7 +23,7 @@ This simple but useful Linux shell script provides functionality for creating ch
 
 **Setup**: Upon first run, the script prompts you to set up the checkpoint storage and predefined folders need to be backup.
 **Quick action script**
-Script allow quick create checkpoint by single command
+Script allows quick create checkpoint by a single command. For that, you can use for other custom made scripts to automate. 
 ```shell
 ./checkpoint-master.sh backup_now
 ```
@@ -40,8 +40,8 @@ When starts script without any parameter, then you will be promp to following op
 To use the script, follow these steps or just using the quick start ways at first line:
 
 1. Clone the repository or download the script file.
-2. Make the script executable: `chmod +x rroll.sh`
-3. Run the script: `./rroll.sh`
+2. Make the script executable: `chmod +x checkpoint-master.sh`
+3. Run the script: `./checkpoint-master.sh`
 
 ## Requirements
 
